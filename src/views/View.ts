@@ -2,11 +2,17 @@ import { Model } from '../models/Model';
 
 /**The K on the right side is copypasted on the left :) */
 export abstract class View<T extends Model<K>, K> {
+	regions: { [key: string]: Element } = {};
+
 	constructor(public parent: Element, public model: T) {
 		this.bindModel();
 	}
 
 	abstract template(): string;
+
+	regionsMap(): { [key: string]: string } {
+		return {};
+	}
 
 	bindModel = (): void => {
 		this.model.on('change', () => {
@@ -14,9 +20,9 @@ export abstract class View<T extends Model<K>, K> {
 		});
 	};
 
-	eventsMap = (): { [key: string]: () => void } => {
+	eventsMap(): { [key: string]: () => void } {
 		return {};
-	};
+	}
 
 	bindEvents(fragement: DocumentFragment): void {
 		const eventsMap = this.eventsMap();
@@ -30,12 +36,30 @@ export abstract class View<T extends Model<K>, K> {
 		}
 	}
 
+	mapRegions(fragement: DocumentFragment): void {
+		const regionsMap = this.regionsMap();
+
+		for (let key in regionsMap) {
+			const selector = regionsMap[key];
+			const element = fragement.querySelector(selector);
+
+			if (element) {
+				this.regions[key] = element;
+			}
+		}
+	}
+
+	onRender(): void {}
+
 	render(): void {
 		this.parent.innerHTML = '';
 		const templateElement = document.createElement('template');
 		templateElement.innerHTML = this.template();
 
 		this.bindEvents(templateElement.content);
+		this.mapRegions(templateElement.content);
+
+		this.onRender();
 
 		this.parent.append(templateElement.content);
 	}
